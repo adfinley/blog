@@ -39,12 +39,9 @@ def query_database():
         ]
     }
     response = requests.post(url, headers=HEADERS, json=data)
-        response = requests.post(url, headers=HEADERS, json=data)
     if not response.ok:
         print(f'Notion said: {response.text}')
     response.raise_for_status()
-    return response.json()['results']
-
     return response.json()['results']
 def get_page_content(page_id):
     """Fetch all blocks from a Notion page"""
