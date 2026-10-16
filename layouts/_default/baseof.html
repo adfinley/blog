@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Title }}{{ end }}">
+  <style>
+    body { font: 18px/1.6 system-ui, sans-serif; max-width: 680px; margin: 0 auto; padding: 2rem 1rem; color: #222; }
+    a { color: inherit; }
+    header { margin-bottom: 3rem; font-weight: 600; }
+    img { max-width: 100%; height: auto; }
+    time { color: #777; font-size: 0.85em; }
+    ul.posts { list-style: none; padding: 0; }
+    ul.posts li { margin-bottom: 2rem; }
+    ul.posts a { font-size: 1.3em; font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header><a href="{{ "/" | relURL }}">{{ .Site.Title }}</a></header>
+  <main>{{ block "main" . }}{{ end }}</main>
+</body>
+</html>
