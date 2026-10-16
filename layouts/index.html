@@ -4,7 +4,7 @@
   <li>
     <a href="{{ .RelPermalink }}">{{ .Title }}</a><br>
     <time>{{ .Date.Format "January 2, 2006" }}</time>
-    {{ with .Description }}<p>{{ . }}</p>{{ end }}
+    {{ with .Description }}<p>{{ . }}</p>{{ .Content }}{{ end }}
   </li>
   {{ end }}
 </ul>
