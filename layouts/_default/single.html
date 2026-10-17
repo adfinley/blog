@@ -1,7 +1,19 @@
 {{ define "main" }}
-<article>
-  <h1>{{ .Title }}</h1>
-  <time>{{ .Date.Format "January 2, 2006" }}</time>
-  {{ .Content }}
+<p><a class="back" href="{{ "/" | relURL }}">← All posts</a></p>
+<article class="post" data-meta="{{ partial "metaline.html" . }}">
+  {{ if .Params.images }}
+  <script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>
+  <div class="stack">
+    {{ range $i, $im := .Params.images }}<button class="tile" data-i="{{ $i }}" aria-label="Open photo"><img src="{{ $im.src | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>{{ end }}
+  </div>
+  {{ end }}
+  <div class="text">
+    <h2>{{ .Title }}</h2>
+    <div class="meta">
+      {{ $pg := . }}{{ range first 1 .Params.categories }}<span class="chip">{{ . }}</span>{{ end }}
+      <span>{{ partial "metaline.html" $pg }}</span>
+    </div>
+    {{ .Content }}
+  </div>
 </article>
 {{ end }}

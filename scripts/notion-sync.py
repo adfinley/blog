@@ -1,228 +1,205 @@
 #!/usr/bin/env python3
-"""
-Sync Notion database to Hugo markdown files
-Converts Notion blocks to Hugo-compatible markdown
-"""
-
+"""Sync a Notion database to Hugo markdown. Downloads images, reads EXIF, strips metadata."""
+import io
+import json
 import os
 import re
-import requests
+import sys
 from datetime import datetime
 from pathlib import Path
-# Configuration from environment variables
+
+import requests
+from PIL import Image, ImageOps
+
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
 DATABASE_ID = os.environ.get('NOTION_DATABASE_ID')
 OUTPUT_DIR = 'content/posts'
-# Notion API setup
+IMAGE_DIR = 'static/images'
 NOTION_API = 'https://api.notion.com/v1'
 HEADERS = {
     'Authorization': f'Bearer {NOTION_TOKEN}',
     'Notion-Version': '2022-06-28',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
 }
+
+
 def query_database():
-    """Fetch all published posts from Notion"""
     url = f'{NOTION_API}/databases/{DATABASE_ID}/query'
-    # Only fetch published posts
     data = {
-        'filter': {
-            'property': 'Status',
-            'status': {
-                'equals': 'Published'
-            }
-        },
-        'sorts': [
-            {
-                'property': 'Published Date',
-                'direction': 'descending'
-            }
-        ]
+        'filter': {'property': 'Status', 'status': {'equals': 'Published'}},
+        'sorts': [{'property': 'Published Date', 'direction': 'descending'}],
     }
     response = requests.post(url, headers=HEADERS, json=data)
     if not response.ok:
         print(f'Notion said: {response.text}')
     response.raise_for_status()
     return response.json()['results']
+
+
 def get_page_content(page_id):
-    """Fetch all blocks from a Notion page"""
-    url = f'{NOTION_API}/blocks/{page_id}/children'
-    response = requests.get(url, headers=HEADERS)
+    response = requests.get(f'{NOTION_API}/blocks/{page_id}/children?page_size=100', headers=HEADERS)
     response.raise_for_status()
     return response.json()['results']
-def notion_to_markdown(blocks):
-    """Convert Notion blocks to markdown"""
-    markdown = []
+
+
+def rich_text_to_markdown(rich_text):
+    out = []
+    for t in rich_text or []:
+        text, a = t['plain_text'], t['annotations']
+        if a['bold']: text = f'**{text}**'
+        if a['italic']: text = f'*{text}*'
+        if a['code']: text = f'`{text}`'
+        if a['strikethrough']: text = f'~~{text}~~'
+        if t.get('href'): text = f'[{text}]({t["href"]})'
+        out.append(text)
+    return ''.join(out)
+
+
+def read_exif(img):
+    """Return a display line like 'Fujifilm X-T5 · lens · 33mm · f/1.4 · 1/1000s · ISO 800'."""
+    try:
+        ex = img.getexif()
+        sub = ex.get_ifd(0x8769)
+    except Exception:
+        return ''
+    make, model = str(ex.get(0x010F, '')).strip(), str(ex.get(0x0110, '')).strip()
+    cam = model if model.lower().startswith(make.lower()) else f'{make.title()} {model}'.strip()
+    parts = [cam, str(sub.get(0xA434, '')).strip()]
+    try:
+        if sub.get(0x920A): parts.append(f'{round(float(sub[0x920A]))}mm')
+        if sub.get(0x829D): parts.append(f'f/{float(sub[0x829D]):g}')
+        if sub.get(0x829A):
+            t = float(sub[0x829A])
+            parts.append(f'1/{round(1 / t)}s' if t < 1 else f'{t:g}s')
+        if sub.get(0x8827): parts.append(f'ISO {sub[0x8827]}')
+    except Exception:
+        pass
+    return ' · '.join(p for p in parts if p)
+
+
+def save_image(url, block_id, slug, caption):
+    """Download once, save a metadata-free JPEG, keep EXIF text and size in a sidecar json."""
+    folder = Path(IMAGE_DIR) / slug
+    folder.mkdir(parents=True, exist_ok=True)
+    name = block_id.replace('-', '')[:8]
+    jpg, side = folder / f'{name}.jpg', folder / f'{name}.json'
+    if not side.exists():
+        r = requests.get(url, timeout=60)
+        r.raise_for_status()
+        img = Image.open(io.BytesIO(r.content))
+        exif = read_exif(img)
+        icc = img.info.get('icc_profile')
+        img = ImageOps.exif_transpose(img).convert('RGB')
+        img.thumbnail((2400, 2400))
+        # No exif= argument, so GPS and all other metadata are dropped from the published file.
+        img.save(jpg, 'JPEG', quality=90, icc_profile=icc)
+        w, h = img.size
+        side.write_text(json.dumps({'w': w, 'h': h, 'exif': exif or caption, 'alt': caption}))
+    meta = json.loads(side.read_text())
+    meta['src'] = f'/images/{slug}/{name}.jpg'
+    return meta
+
+
+def notion_to_markdown(blocks, slug, images):
+    md = []
     for block in blocks:
-        block_type = block['type']
-        # Paragraph
-        if block_type == 'paragraph':
-            text = rich_text_to_markdown(block['paragraph']['rich_text'])
-            if text.strip():
-                markdown.append(f'{text}\n')
-        # Headings
-        elif block_type == 'heading_1':
-            text = rich_text_to_markdown(block['heading_1']['rich_text'])
-            markdown.append(f'## {text}\n')
-        elif block_type == 'heading_2':
-            text = rich_text_to_markdown(block['heading_2']['rich_text'])
-            markdown.append(f'### {text}\n')
-        elif block_type == 'heading_3':
-            text = rich_text_to_markdown(block['heading_3']['rich_text'])
-            markdown.append(f'#### {text}\n')
-        # Lists
-        elif block_type == 'bulleted_list_item':
-            text = rich_text_to_markdown(block['bulleted_list_item']['rich_text'])
-            markdown.append(f'- {text}\n')
-        elif block_type == 'numbered_list_item':
-            text = rich_text_to_markdown(block['numbered_list_item']['rich_text'])
-            markdown.append(f'1. {text}\n')
-        # Code blocks
-        elif block_type == 'code':
-            code = rich_text_to_markdown(block['code']['rich_text'])
-            language = block['code']['language']
-            markdown.append(f'```{language}\n{code}\n```\n')
-        # Quotes
-        elif block_type == 'quote':
-            text = rich_text_to_markdown(block['quote']['rich_text'])
-            markdown.append(f'> {text}\n')
-        # Images
-        elif block_type == 'image':
-            url = (
-                block['image'].get('file', {}).get('url')
-                or block['image'].get('external', {}).get('url')
-            )
+        t = block['type']
+        rt = lambda: rich_text_to_markdown(block[t]['rich_text'])
+        if t == 'paragraph':
+            if rt().strip(): md.append(f'{rt()}\n')
+        elif t == 'heading_1': md.append(f'## {rt()}\n')
+        elif t == 'heading_2': md.append(f'### {rt()}\n')
+        elif t == 'heading_3': md.append(f'#### {rt()}\n')
+        elif t == 'bulleted_list_item': md.append(f'- {rt()}\n')
+        elif t == 'numbered_list_item': md.append(f'1. {rt()}\n')
+        elif t == 'code': md.append(f'```{block[t]["language"]}\n{rt()}\n```\n')
+        elif t == 'quote': md.append(f'> {rt()}\n')
+        elif t == 'divider': md.append('---\n')
+        elif t == 'image':
+            url = block['image'].get('file', {}).get('url') or block['image'].get('external', {}).get('url')
             if url:
                 caption = rich_text_to_markdown(block['image'].get('caption', []))
-                alt_text = caption if caption else 'Image'
-                markdown.append(f'![{alt_text}]({url})\n')
-        # Divider
-        elif block_type == 'divider':
-            markdown.append('---\n')
-    return '\n'.join(markdown)
-def rich_text_to_markdown(rich_text):
-    """Convert Notion rich text to markdown formatting"""
-    if not rich_text:
-        return ''
-    result = []
-    for text_obj in rich_text:
-        text = text_obj['plain_text']
-        annotations = text_obj['annotations']
-        # Apply markdown formatting
-        if annotations['bold']:
-            text = f'**{text}**'
-        if annotations['italic']:
-            text = f'*{text}*'
-        if annotations['code']:
-            text = f'`{text}`'
-        if annotations['strikethrough']:
-            text = f'~~{text}~~'
-        # Handle links
-        if text_obj.get('href'):
-            text = f'[{text}]({text_obj["href"]})'
-        result.append(text)
-    return ''.join(result)
+                images.append(save_image(url, block['id'], slug, caption))
+    return '\n'.join(md)
+
+
+def plain(prop, kind):
+    items = (prop or {}).get(kind) or []
+    return items[0]['plain_text'] if items else ''
+
+
 def extract_properties(page):
-    """Extract front matter properties from Notion page"""
-    props = page['properties']
-    # Title
-    title_prop = props.get('Name') or props.get('Title')
-    title = ''
-    if title_prop and title_prop.get('title'):
-        title = title_prop['title'][0]['plain_text']
-    # Date
-    date_prop = props.get('Published Date') or props.get('Date')
-    date = datetime.now().isoformat()
-    if date_prop and date_prop.get('date'):
-        date = date_prop['date']['start']
-    # Slug
-    slug_prop = props.get('Slug')
-    slug = ''
-    if slug_prop and slug_prop.get('rich_text'):
-        slug = slug_prop['rich_text'][0]['plain_text']
-    if not slug:
-        # Auto-generate from title
-        slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
-    # Description
-    desc_prop = props.get('Description')
-    description = ''
-    if desc_prop and desc_prop.get('rich_text'):
-        description = desc_prop['rich_text'][0]['plain_text']
-    # Tags
-    tags_prop = props.get('Tags')
-    tags = []
-    if tags_prop and tags_prop.get('multi_select'):
-        tags = [tag['name'] for tag in tags_prop['multi_select']]
-    # Category
-    cat_prop = props.get('Category')
-    category = 'Uncategorized'
-    if cat_prop and cat_prop.get('select'):
-        category = cat_prop['select']['name']
+    p = page['properties']
+    title = plain(p.get('Name') or p.get('Title'), 'title')
+    date_prop = p.get('Published Date') or p.get('Date')
+    date = date_prop['date']['start'] if date_prop and date_prop.get('date') else datetime.now().isoformat()
+    slug = plain(p.get('Slug'), 'rich_text') or re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    tags = [x['name'] for x in (p.get('Tags') or {}).get('multi_select', [])]
+    cat = (p.get('Category') or {}).get('select')
+    ftype = (p.get('Feature type') or {}).get('select')
     return {
-        'title': title,
-        'date': date,
-        'slug': slug,
-        'description': description,
-        'tags': tags,
-        'category': category
+        'title': title, 'date': date, 'slug': slug,
+        'description': plain(p.get('Description'), 'rich_text'),
+        'location': plain(p.get('Location'), 'rich_text'),
+        'tags': tags, 'categories': [cat['name'] if cat else 'Uncategorized'],
+        'feature_type': ftype['name'] if ftype else 'Landscape',
+        'gallery': bool((p.get('Gallery') or {}).get('checkbox')),
     }
-def create_hugo_post(page_id, properties, content):
-    """Create Hugo markdown file with front matter"""
-    slug = properties['slug']
-    filename = f"{slug}.md"
-    filepath = Path(OUTPUT_DIR) / filename
-    # Build front matter
-    tags_str = ', '.join([f'"{tag}"' for tag in properties['tags']])
-    front_matter = f"""---
-title: "{properties['title']}"
-date: {properties['date']}
-description: "{properties['description']}"
-tags: [{tags_str}]
-categories: ["{properties['category']}"]
-draft: false
----
-"""
-    # Write file
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(front_matter)
-        f.write(content)
-    print(f'✓ Created: {filename}')
-    return filename
+
+
+def pick_feature(images, ftype):
+    """Indexes of the photos shown on the list page, in grid order."""
+    land = [i for i, im in enumerate(images) if im['w'] >= im['h']]
+    port = [i for i, im in enumerate(images) if im['w'] < im['h']]
+    if ftype == 'Mixed gallery' and port and len(land) >= 2:
+        return [land[0], port[0], land[1]]
+    if ftype == 'Portrait gallery':
+        pick = list(range(min(3, len(images))))
+        l = [i for i in pick if i in land]
+        if len(pick) == 3 and len(l) == 1:  # one landscape among portraits goes in the middle
+            pick.remove(l[0]); pick.insert(1, l[0])
+        return pick
+    return list(range(min(1, len(images))))
+
+
+def create_hugo_post(props, content, images):
+    fm = dict(props)
+    slug = fm.pop('slug')
+    fm['draft'] = False
+    fm['images'] = images
+    fm['feature'] = pick_feature(images, props['feature_type'])
+    lines = ['---'] + [f'{k}: {json.dumps(v, ensure_ascii=False)}' for k, v in fm.items()] + ['---', '']
+    path = Path(OUTPUT_DIR) / f'{slug}.md'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('\n'.join(lines) + content, encoding='utf-8')
+    print(f'✓ Created: {path.name} ({len(images)} images)')
+
+
 def sync():
-    """Main sync function"""
-    print('🔄 Syncing Notion to Hugo...\n')
-    # Fetch published posts
+    print('🔄 Syncing Notion to Hugo...')
     try:
         pages = query_database()
-        print(f'Found {len(pages)} published posts\n')
     except Exception as e:
         print(f'❌ Error querying database: {e}')
-        return
-    synced = 0
+        sys.exit(1)
+    print(f'Found {len(pages)} published posts')
     errors = 0
     for page in pages:
         try:
-            # Extract properties
-            properties = extract_properties(page)
-            # Fetch content
-            blocks = get_page_content(page['id'])
-            content = notion_to_markdown(blocks)
-            # Create Hugo post
-            create_hugo_post(page['id'], properties, content)
-            synced += 1
+            props = extract_properties(page)
+            images = []
+            content = notion_to_markdown(get_page_content(page['id']), props['slug'], images)
+            create_hugo_post(props, content, images)
         except Exception as e:
             print(f'✗ Error processing page: {e}')
             errors += 1
-    print(f'\n✅ Sync complete!')
-    print(f'   Synced: {synced} posts')
-    if errors > 0:
-        print(f'   Errors: {errors} posts')
+    print(f'✅ Done. Errors: {errors}')
+    if errors:
+        sys.exit(1)
+
+
 if __name__ == '__main__':
-    # Validate environment variables
-    if not NOTION_TOKEN:
-        print('❌ Error: NOTION_TOKEN not set')
-        exit(1)
-    if not DATABASE_ID:
-        print('❌ Error: NOTION_DATABASE_ID not set')
-        exit(1)
+    if not NOTION_TOKEN or not DATABASE_ID:
+        print('❌ NOTION_TOKEN or NOTION_DATABASE_ID not set')
+        sys.exit(1)
     sync()

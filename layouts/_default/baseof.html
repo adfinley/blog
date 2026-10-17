@@ -4,20 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
-  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Title }}{{ end }}">
-  <style>
-    body { font: 18px/1.6 system-ui, sans-serif; max-width: 680px; margin: 0 auto; padding: 2rem 1rem; color: #222; }
-    a { color: inherit; }
-    header { margin-bottom: 3rem; font-weight: 600; }
-    img { max-width: 100%; height: auto; }
-    time { color: #777; font-size: 0.85em; }
-    ul.posts { list-style: none; padding: 0; }
-    ul.posts li { margin-bottom: 2rem; }
-    ul.posts a { font-size: 1.3em; font-weight: 600; text-decoration: none; }
-  </style>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.tagline }}{{ end }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&family=Public+Sans&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}">
 </head>
 <body>
-  <header><a href="{{ "/" | relURL }}">{{ .Site.Title }}</a></header>
-  <main>{{ block "main" . }}{{ end }}</main>
+  <div class="wrap">{{ block "main" . }}{{ end }}</div>
+  <script src="{{ "js/gallery.js" | relURL }}"></script>
 </body>
 </html>

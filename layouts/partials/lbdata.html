@@ -1,0 +1,1 @@
+{{ $l := slice }}{{ range .Params.images }}{{ $l = $l | append (dict "src" (.src | relURL) "exif" .exif "alt" .alt) }}{{ end }}{{ return ($l | jsonify) }}

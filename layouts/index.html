@@ -1,12 +1,39 @@
 {{ define "main" }}
-<ul class="posts">
-  {{ range where .Site.RegularPages "Section" "posts" }}
-  <li>
-    <a href="{{ .RelPermalink }}">{{ .Title }}</a><br>
-    <time>{{ .Date.Format "January 2, 2006" }}</time>
-    {{ with .Description }}<p>{{ . }}</p>{{ end }}
-    {{ .Content }}
-  </li>
+<h1 class="tagline">{{ .Site.Params.tagline }}</h1>
+{{ $p := .Paginate (where .Site.RegularPages "Section" "posts") }}
+<div class="posts">
+  {{ range $p.Pages }}
+  {{ $pg := . }}
+  <article class="post" data-meta="{{ partial "metaline.html" . }}">
+    {{ if .Params.images }}<script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>{{ partial "feature.html" . }}{{ end }}
+    <div class="text">
+      <div>
+        <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+        {{ with .Description }}<p>{{ . }}</p>{{ end }}
+      </div>
+      <div class="meta">
+        {{ range first 1 $pg.Params.categories }}<span class="chip">{{ . }}</span>{{ end }}
+        <span>{{ partial "metaline.html" $pg }}</span>
+        {{ if eq (len $pg.Params.feature) 1 }}{{ with (index $pg.Params.images (index $pg.Params.feature 0)).exif }}<span>{{ . }}</span>{{ end }}{{ end }}
+      </div>
+    </div>
+  </article>
   {{ end }}
-</ul>
+</div>
+{{ $t := $p.TotalPages }}{{ $c := $p.PageNumber }}
+{{ if gt $t 1 }}
+<nav class="pager" aria-label="Pagination">
+  {{ if $p.HasPrev }}<a href="{{ $p.Prev.URL }}">← Previous</a>{{ else }}<span class="off">← Previous</span>{{ end }}
+  {{ $ps := true }}
+  {{ range $p.Pagers }}
+    {{ $n := .PageNumber }}
+    {{ $show := or (le $n 3) (ge $n (sub $t 1)) (and (ge $n (sub $c 1)) (le $n (add $c 1))) }}
+    {{ if $show }}
+      {{ if eq $n $c }}<span class="cur">{{ $n }}</span>{{ else }}<a href="{{ .URL }}">{{ $n }}</a>{{ end }}
+    {{ else if $ps }}<span>…</span>{{ end }}
+    {{ $ps = $show }}
+  {{ end }}
+  {{ if $p.HasNext }}<a href="{{ $p.Next.URL }}">Next →</a>{{ else }}<span class="off">Next →</span>{{ end }}
+</nav>
+{{ end }}
 {{ end }}
