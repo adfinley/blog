@@ -94,8 +94,10 @@ def save_image(url, block_id, slug, caption):
         # No exif= argument, so GPS and all other metadata are dropped from the published file.
         img.save(jpg, 'JPEG', quality=90, icc_profile=icc)
         w, h = img.size
-        side.write_text(json.dumps({'w': w, 'h': h, 'exif': exif or caption, 'alt': caption}))
+        side.write_text(json.dumps({'w': w, 'h': h, 'exif': exif}))
     meta = json.loads(side.read_text())
+    meta['exif'] = meta.get('exif') or caption  # real EXIF wins; otherwise the current Notion caption
+    meta['alt'] = caption
     meta['src'] = f'/images/{slug}/{name}.jpg'
     return meta
 
