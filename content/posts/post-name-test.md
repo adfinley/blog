@@ -1,9 +1,13 @@
 ---
 title: "Post Name Test"
-date: 2026-10-15
+date: "2026-10-15"
 description: "Testing from notion"
+location: ""
 tags: ["test"]
 categories: ["POTD"]
+feature_type: "Landscape"
+gallery: false
 draft: false
+images: [{"w": 2400, "h": 1600, "exif": "", "alt": "", "src": "/images/post-name-test/3f9c8aa3.jpg"}]
+feature: [0]
 ---
-![Image](https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?ixlib=rb-4.1.0&q=85&fm=jpg&crop=entropy&cs=srgb)
