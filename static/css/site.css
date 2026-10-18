@@ -92,3 +92,7 @@ h1.tagline{margin:0 0 12px 8px}
 .lb.zoom .lb-stage{padding:0}
 .cols{flex-direction:column;gap:12px}
 }
+.lb-stage.scroll{justify-content:center}
+.lb-stage.scroll img{margin:0 auto}
+html a,html a *,html button,html button *,html .tile,html .tile *,html .dots i{cursor:pointer !important}
+html p,html h1,html h2,html li,html .meta span,html .chip,html .cap-row span,html .pager span{cursor:text !important}
