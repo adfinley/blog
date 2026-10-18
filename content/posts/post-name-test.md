@@ -8,6 +8,6 @@ categories: ["POTD"]
 feature_type: "Landscape"
 gallery: false
 draft: false
-images: [{"w": 2400, "h": 1600, "exif": "July 19, 2026 · Surrey, BC      Fujifilm X-T5 · XF 33mm f/1.4 R LM WR · 33mm · f/1.4 · 1/1000s · ISO 800", "alt": "July 19, 2026 · Surrey, BC      Fujifilm X-T5 · XF 33mm f/1.4 R LM WR · 33mm · f/1.4 · 1/1000s · ISO 800", "src": "/images/post-name-test/97f00ea292.jpg"}]
+images: [{"w": 2400, "h": 1600, "exif": "", "alt": "", "src": "/images/post-name-test/97f00ea292.jpg"}]
 feature: [0]
 ---
