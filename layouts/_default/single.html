@@ -1,6 +1,6 @@
 {{ define "main" }}
-<p><a class="back" href="{{ "/" | relURL }}">← All posts</a></p>
-<article class="post" data-meta="{{ partial "metaline.html" . }}">
+<p><a class="back" href="{{ .Site.Home.RelPermalink }}">← All posts</a></p>
+<article class="post" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}">
   {{ if .Params.images }}
   <script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>
   <div class="stack">

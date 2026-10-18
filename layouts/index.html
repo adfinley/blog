@@ -4,7 +4,7 @@
 <div class="posts">
   {{ range $p.Pages }}
   {{ $pg := . }}
-  <article class="post" data-meta="{{ partial "metaline.html" . }}">
+  <article class="post" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}">
     {{ if .Params.images }}<script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>{{ partial "feature.html" . }}{{ end }}
     <div class="text">
       <div>

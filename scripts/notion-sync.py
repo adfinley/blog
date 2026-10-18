@@ -12,6 +12,12 @@ from pathlib import Path
 import requests
 from PIL import Image, ImageOps
 
+try:  # lets Pillow open HEIC photos (e.g. dragged from Apple Photos)
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
+
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
 DATABASE_ID = os.environ.get('NOTION_DATABASE_ID')
 OUTPUT_DIR = 'content/posts'
@@ -57,12 +63,12 @@ def rich_text_to_markdown(rich_text):
 
 
 def read_exif(img):
-    """Return a display line like 'Fujifilm X-T5 · lens · 33mm · f/1.4 · 1/1000s · ISO 800'."""
+    """Return (display line, date of capture) from the photo's EXIF."""
     try:
         ex = img.getexif()
         sub = ex.get_ifd(0x8769)
     except Exception:
-        return ''
+        return '', ''
     make, model = str(ex.get(0x010F, '')).strip(), str(ex.get(0x0110, '')).strip()
     cam = model if model.lower().startswith(make.lower()) else f'{make.title()} {model}'.strip()
     parts = [cam, str(sub.get(0xA434, '')).strip()]
@@ -75,27 +81,33 @@ def read_exif(img):
         if sub.get(0x8827): parts.append(f'ISO {sub[0x8827]}')
     except Exception:
         pass
-    return ' · '.join(p for p in parts if p)
+    raw = str(sub.get(0x9003) or ex.get(0x0132) or '')
+    try:
+        dt = datetime.strptime(raw[:19], '%Y:%m:%d %H:%M:%S')
+        date = f'{dt:%B} {dt.day}, {dt.year}'
+    except ValueError:
+        date = ''
+    return ' · '.join(p for p in parts if p), date
 
 
 def save_image(url, block_id, slug, caption):
-    """Download once, save a metadata-free JPEG, keep EXIF text and size in a sidecar json."""
+    """Download once, save a metadata-free JPEG, keep EXIF text, date and size in a sidecar json."""
     folder = Path(IMAGE_DIR) / slug
     folder.mkdir(parents=True, exist_ok=True)
     name = hashlib.sha1(block_id.encode()).hexdigest()[:10]
     jpg, side = folder / f'{name}.jpg', folder / f'{name}.json'
-    if not side.exists():
+    if not side.exists() or 'date' not in json.loads(side.read_text()):
         r = requests.get(url, timeout=60)
         r.raise_for_status()
         img = Image.open(io.BytesIO(r.content))
-        exif = read_exif(img)
+        exif, date = read_exif(img)
         icc = img.info.get('icc_profile')
         img = ImageOps.exif_transpose(img).convert('RGB')
         img.thumbnail((2400, 2400))
         # No exif= argument, so GPS and all other metadata are dropped from the published file.
         img.save(jpg, 'JPEG', quality=90, icc_profile=icc)
         w, h = img.size
-        side.write_text(json.dumps({'w': w, 'h': h, 'exif': exif}))
+        side.write_text(json.dumps({'w': w, 'h': h, 'exif': exif, 'date': date}))
     meta = json.loads(side.read_text())
     meta['exif'] = meta.get('exif') or caption  # real EXIF wins; otherwise the current Notion caption
     meta['alt'] = caption
@@ -103,13 +115,41 @@ def save_image(url, block_id, slug, caption):
     return meta
 
 
+def video_markdown(url):
+    m = re.search(r'(?:youtu\.be/|v=|embed/|shorts/)([\w-]{11})', url)
+    if 'youtu' in url and m:
+        return '{{< youtube ' + m.group(1) + ' >}}\n'
+    m = re.search(r'vimeo\.com/(?:video/)?(\d+)', url)
+    if m:
+        return '{{< vimeo ' + m.group(1) + ' >}}\n'
+    return f'[{url}]({url})\n'
+
+
 def notion_to_markdown(blocks, slug, images):
-    md = []
+    """Images at the top of the page become the featured gallery; later images stay inline, in order."""
+    md, leading = [], True
     for block in blocks:
         t = block['type']
         rt = lambda: rich_text_to_markdown(block[t]['rich_text'])
-        if t == 'paragraph':
-            if rt().strip(): md.append(f'{rt()}\n')
+        if t == 'paragraph' and not rt().strip():
+            continue
+        if t == 'image':
+            url = block['image'].get('file', {}).get('url') or block['image'].get('external', {}).get('url')
+            if not url:
+                continue
+            caption = rich_text_to_markdown(block['image'].get('caption', []))
+            try:
+                im = save_image(url, block['id'], slug, caption)
+            except Exception as e:
+                print(f'⚠ Skipped an image in {slug}: {e}')
+                continue
+            if leading:
+                images.append(im)
+            else:
+                md.append(f'![{caption or "Image"}]({im["src"]})\n')
+            continue
+        leading = False
+        if t == 'paragraph': md.append(f'{rt()}\n')
         elif t == 'heading_1': md.append(f'## {rt()}\n')
         elif t == 'heading_2': md.append(f'### {rt()}\n')
         elif t == 'heading_3': md.append(f'#### {rt()}\n')
@@ -118,11 +158,11 @@ def notion_to_markdown(blocks, slug, images):
         elif t == 'code': md.append(f'```{block[t]["language"]}\n{rt()}\n```\n')
         elif t == 'quote': md.append(f'> {rt()}\n')
         elif t == 'divider': md.append('---\n')
-        elif t == 'image':
-            url = block['image'].get('file', {}).get('url') or block['image'].get('external', {}).get('url')
+        elif t in ('video', 'embed'):
+            d = block[t]
+            url = d.get('url') or d.get('external', {}).get('url') or d.get('file', {}).get('url') or ''
             if url:
-                caption = rich_text_to_markdown(block['image'].get('caption', []))
-                images.append(save_image(url, block['id'], slug, caption))
+                md.append(video_markdown(url))
     return '\n'.join(md)
 
 
@@ -136,7 +176,7 @@ def extract_properties(page):
     title = plain(p.get('Name') or p.get('Title'), 'title')
     date_prop = p.get('Published Date') or p.get('Date')
     date = date_prop['date']['start'] if date_prop and date_prop.get('date') else datetime.now().isoformat()
-    slug = plain(p.get('Slug'), 'rich_text') or re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-') or 'post-' + page['id'].replace('-', '')[:8]
     tags = [x['name'] for x in (p.get('Tags') or {}).get('multi_select', [])]
     cat = (p.get('Category') or {}).get('select')
     ftype = (p.get('Feature type') or {}).get('select')
@@ -151,18 +191,25 @@ def extract_properties(page):
 
 
 def pick_feature(images, ftype):
-    """Indexes of the photos shown on the list page, in grid order."""
-    land = [i for i, im in enumerate(images) if im['w'] >= im['h']]
-    port = [i for i, im in enumerate(images) if im['w'] < im['h']]
-    if ftype == 'Mixed gallery' and port and len(land) >= 2:
-        return [land[0], port[0], land[1]]
-    if ftype == 'Portrait gallery':
-        pick = list(range(min(3, len(images))))
-        l = [i for i in pick if i in land]
-        if len(pick) == 3 and len(l) == 1:  # one landscape among portraits goes in the middle
-            pick.remove(l[0]); pick.insert(1, l[0])
-        return pick
-    return list(range(min(1, len(images))))
+    """Return (indexes of the photos shown on the list page in grid order, grid name).
+    Gallery types adapt to the orientation of the first three photos."""
+    n = len(images)
+    if 'gallery' not in ftype.lower() or n < 2:
+        return list(range(min(1, n))), 'single'
+    idx = list(range(min(3, n)))
+    if len(idx) == 2:
+        return idx, 'pair'
+    port = [i for i in idx if images[i]['w'] < images[i]['h']]
+    land = [i for i in idx if i not in port]
+    if len(port) == 3:
+        return idx, 'columns'
+    if len(port) == 2:
+        if idx[1] in land:           # portrait, landscape, portrait
+            return idx, 'columns'
+        return port + land, 'split'  # two portraits tall-left + cropped top-right, landscape bottom-right
+    if len(port) == 1:
+        return [land[0], port[0], land[1]], 'mixed'
+    return idx, 'split'              # three landscapes
 
 
 def create_hugo_post(props, content, images):
@@ -170,7 +217,7 @@ def create_hugo_post(props, content, images):
     slug = fm.pop('slug')
     fm['draft'] = False
     fm['images'] = images
-    fm['feature'] = pick_feature(images, props['feature_type'])
+    fm['feature'], fm['grid'] = pick_feature(images, props['feature_type'])
     lines = ['---'] + [f'{k}: {json.dumps(v, ensure_ascii=False)}' for k, v in fm.items()] + ['---', '']
     path = Path(OUTPUT_DIR) / f'{slug}.md'
     path.parent.mkdir(parents=True, exist_ok=True)

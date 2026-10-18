@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono&family=Public+Sans&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}">
+  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}?v={{ now.Unix }}">
 </head>
 <body>
   <div class="wrap">{{ block "main" . }}{{ end }}</div>
-  <script src="{{ "js/gallery.js" | relURL }}"></script>
+  <script src="{{ "js/gallery.js" | relURL }}?v={{ now.Unix }}"></script>
 </body>
 </html>
