@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Sync a Notion database to Hugo markdown. Downloads images, reads EXIF, strips metadata."""
+import hashlib
 import io
 import json
 import os
@@ -81,7 +82,7 @@ def save_image(url, block_id, slug, caption):
     """Download once, save a metadata-free JPEG, keep EXIF text and size in a sidecar json."""
     folder = Path(IMAGE_DIR) / slug
     folder.mkdir(parents=True, exist_ok=True)
-    name = block_id.replace('-', '')[:8]
+    name = hashlib.sha1(block_id.encode()).hexdigest()[:10]
     jpg, side = folder / f'{name}.jpg', folder / f'{name}.json'
     if not side.exists():
         r = requests.get(url, timeout=60)
