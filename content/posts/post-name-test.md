@@ -8,6 +8,7 @@ categories: ["POTD"]
 feature_type: "Landscape"
 gallery: false
 draft: false
-images: [{"w": 2400, "h": 1600, "exif": "", "alt": "", "src": "/images/post-name-test/97f00ea292.jpg"}]
+images: [{"w": 2400, "h": 1600, "exif": "", "date": "", "alt": "", "src": "/images/post-name-test/97f00ea292.jpg"}]
 feature: [0]
+grid: "single"
 ---

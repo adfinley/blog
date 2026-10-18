@@ -8,6 +8,7 @@ categories: ["Article"]
 feature_type: "Portrait"
 gallery: false
 draft: false
-images: [{"w": 720, "h": 1280, "exif": "Apple iPhone 12 mini · iPhone 12 mini back dual wide camera 4.2mm f/1.6 · 4mm · f/1.6 · 1/176s · ISO 32", "alt": "", "src": "/images/blog-article-six/b2c9c826b3.jpg"}]
+images: [{"w": 720, "h": 1280, "exif": "Apple iPhone 12 mini · iPhone 12 mini back dual wide camera 4.2mm f/1.6 · 4mm · f/1.6 · 1/176s · ISO 32", "date": "August 31, 2025", "alt": "", "src": "/images/blog-article-six/b2c9c826b3.jpg"}]
 feature: [0]
+grid: "single"
 ---
