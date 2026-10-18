@@ -8,7 +8,7 @@ categories: ["POTD"]
 feature_type: "Landscape"
 gallery: false
 draft: false
-images: [{"w": 1280, "h": 720, "exif": "Apple iPhone 17 · iPhone 17 back dual wide camera 5.96mm f/1.6 · 6mm · f/1.6 · 1/8850s · ISO 50", "alt": "", "src": "/images/plain-blog-post/976cec1c4d.jpg"}]
+images: [{"w": 1280, "h": 720, "exif": "Apple iPhone 17 · iPhone 17 back dual wide camera 5.96mm f/1.6 · 6mm · f/1.6 · 1/8850s · ISO 50", "alt": "", "src": "/images/plain-blog-post/976cec1c4d.jpg"}, {"w": 1280, "h": 854, "exif": "Canon EOS R · EF50mm f/1.8 STM · 50mm · f/2.8 · 1/500s · ISO 125", "alt": "", "src": "/images/plain-blog-post/acd6e85420.jpg"}]
 feature: [0]
 ---
 Text on the page
@@ -20,3 +20,5 @@ Lorem ipsum dolor sit amet, shutter speed sed do eiusmod tempor incididunt ut ap
 Just out here chasing light and ignoring my responsibilities! 🌅 Captured this absolute masterpiece while pretending I knew how to use manual focus. Is it overexposed? Yes. Is the horizon crooked? Absolutely. Does it evoke the raw, unfiltered essence of Tuesday? You tell me, besties. Drop a 🥹 in the comments if this picture changed your entire cellular structure.
 
 #StreetPhotography #AnalogVibes #OutOfFocusButMakeItArt #FilmIsNotDead #IActuallyShootOnDigitalButSonySoundsBroke #SurreyByPass #LivingMyBestLife #BlurryIsMyAesthetic
+
+Light is just photons having an existential crisis. When I pointed the lens toward this rusty parking meter on a Tuesday afternoon, I wasn't just capturing metal—I was capturing a mood. A vibe. A soft, whispering dialogue between civic infrastructure and my own internal landscape. Notice how the bokeh bleeds into the background like spilled espresso on a linen tablecloth. It’s gritty. It’s honest. It makes you feel things you didn’t ask to feel.
