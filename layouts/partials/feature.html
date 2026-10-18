@@ -2,7 +2,7 @@
 <div class="photo ft-{{ .Params.feature_type | default "Landscape" | anchorize }}">
   {{ range $n, $i := .Params.feature }}
   {{ $im := index $imgs $i }}
-  <button class="tile t{{ $n }}" data-i="{{ $i }}" aria-label="Open photo"><img src="{{ $im.src | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>
+  <button class="tile t{{ $n }}" data-i="{{ $i }}" aria-label="Open photo"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>
   {{ end }}
   {{ if .Params.gallery }}<span class="badge">📷 Gallery·{{ len $imgs }}</span>{{ end }}
 </div>

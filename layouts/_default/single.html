@@ -4,7 +4,7 @@
   {{ if .Params.images }}
   <script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>
   <div class="stack">
-    {{ range $i, $im := .Params.images }}<button class="tile" data-i="{{ $i }}" aria-label="Open photo"><img src="{{ $im.src | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>{{ end }}
+    {{ range $i, $im := .Params.images }}<button class="tile" data-i="{{ $i }}" aria-label="Open photo"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>{{ end }}
   </div>
   {{ end }}
   <div class="text">
