@@ -23,3 +23,7 @@ Just out here chasing light and ignoring my responsibilities! 🌅 Captured this
 #StreetPhotography #AnalogVibes #OutOfFocusButMakeItArt #FilmIsNotDead #IActuallyShootOnDigitalButSonySoundsBroke #SurreyByPass #LivingMyBestLife #BlurryIsMyAesthetic
 
 ![Image](/images/plain-blog-post/acd6e85420.jpg)
+
+Light is just photons having an existential crisis. When I pointed the lens toward this rusty parking meter on a Tuesday afternoon, I wasn't just capturing metal—I was capturing a mood. A vibe. A soft, whispering dialogue between civic infrastructure and my own internal landscape. Notice how the bokeh bleeds into the background like spilled espresso on a linen tablecloth. It’s gritty. It’s honest. It makes you feel things you didn’t ask to feel.
+
+{{< youtube TO5ClCvS7ro >}}
