@@ -75,3 +75,20 @@ h1.tagline{font-size:22px;margin:0 0 12px}
 .lb-cap{margin-top:12px;padding:0 12px}
 .cap-row{flex-direction:column;gap:4px}
 }
+a,a *,button,button *,.tile,.tile *,.dots i{cursor:pointer}
+p,h1.tagline,.text h2,.meta span,.chip,.cap-row span,.pager span{cursor:text}
+.lb-stage{touch-action:none}
+.lb.zoom .lb-btn,.lb.zoom .lb-cap{display:none}
+.lb-stage.scroll{overflow:auto;align-items:flex-start}
+.cols{display:flex;gap:24px;align-items:flex-start;margin:16px 0}
+.col{flex:1;min-width:0}
+.col>:first-child{margin-top:0}.col>:last-child{margin-bottom:0}
+@media(max-width:700px){
+.posts{gap:16px}
+h1.tagline{margin:0 0 12px 8px}
+.photo{margin:8px 8px 0}
+.stack{margin:8px}
+.lb-stage{padding:0 12px}
+.lb.zoom .lb-stage{padding:0}
+.cols{flex-direction:column;gap:12px}
+}

@@ -125,9 +125,9 @@ def video_markdown(url):
     return f'[{url}]({url})\n'
 
 
-def notion_to_markdown(blocks, slug, images):
+def notion_to_markdown(blocks, slug, images, gallery=True):
     """Images at the top of the page become the featured gallery; later images stay inline, in order."""
-    md, leading = [], True
+    md, leading = [], gallery
     for block in blocks:
         t = block['type']
         rt = lambda: rich_text_to_markdown(block[t]['rich_text'])
@@ -158,6 +158,12 @@ def notion_to_markdown(blocks, slug, images):
         elif t == 'code': md.append(f'```{block[t]["language"]}\n{rt()}\n```\n')
         elif t == 'quote': md.append(f'> {rt()}\n')
         elif t == 'divider': md.append('---\n')
+        elif t == 'column_list':  # Notion columns: fetch each column's blocks, render side by side
+            cols = []
+            for col in get_page_content(block['id']):
+                inner = notion_to_markdown(get_page_content(col['id']), slug, images, gallery=False).strip()
+                cols.append(f'<div class="col">\n\n{inner}\n\n</div>')
+            md.append('<div class="cols">\n' + '\n'.join(cols) + '\n</div>\n')
         elif t in ('video', 'embed'):
             d = block[t]
             url = d.get('url') or d.get('external', {}).get('url') or d.get('file', {}).get('url') or ''

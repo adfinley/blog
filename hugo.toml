@@ -7,3 +7,6 @@ title = "Blog"
 
 [params]
   tagline = "Visual carbohydrates for your eyeballs"
+
+[markup.goldmark.renderer]
+  unsafe = true
