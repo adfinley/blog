@@ -1,10 +1,18 @@
 {{ define "main" }}
-<h1 class="tagline">{{ .Site.Params.tagline }}</h1>
+<div class="head">
+  <h1 class="tagline">{{ .Site.Params.tagline }}</h1>
+  <div class="viewtoggle" role="group" aria-label="Choose view">
+    <button type="button" data-view="card" aria-pressed="true" aria-label="Card view" title="Card view"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="3.5"/><path d="M1.5 12.5h15"/></svg></button>
+    <button type="button" data-view="grid" aria-pressed="false" aria-label="Grid view" title="Grid view"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="3.5"/><path d="M1.5 6.5h15M1.5 11.5h15M6.5 1.5v15M11.5 1.5v15"/></svg></button>
+  </div>
+</div>
+
+<div class="cardview">
 {{ $p := .Paginate (where .Site.RegularPages "Section" "posts") }}
 <div class="posts">
   {{ range $p.Pages }}
   {{ $pg := . }}
-  <article class="post" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}">
+  <article class="post" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}" data-url="{{ .RelPermalink }}">
     {{ if .Params.images }}<script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>{{ partial "feature.html" . }}{{ end }}
     <div class="text">
       <div>
@@ -12,9 +20,9 @@
         {{ with .Description }}<p>{{ . }}</p>{{ end }}
       </div>
       <div class="meta">
-        {{ range first 1 $pg.Params.categories }}<span class="chip">{{ . }}</span>{{ end }}
+        {{ with $pg.Params.categories }}{{ range first 1 . }}<span class="chip">{{ . }}</span>{{ end }}{{ end }}
         <span>{{ partial "metaline.html" $pg }}</span>
-        {{ if eq (len $pg.Params.feature) 1 }}{{ with (index $pg.Params.images (index $pg.Params.feature 0)).exif }}<span>{{ . }}</span>{{ end }}{{ end }}
+        {{ if eq (len ($pg.Params.feature | default slice)) 1 }}{{ with (index $pg.Params.images (index $pg.Params.feature 0)).exif }}<span>{{ . }}</span>{{ end }}{{ end }}
       </div>
     </div>
   </article>
@@ -36,4 +44,18 @@
   {{ if $p.HasNext }}<a href="{{ $p.Next.URL }}">Next →</a>{{ else }}<span class="off">Next →</span>{{ end }}
 </nav>
 {{ end }}
+</div>
+
+<div class="gridview">
+  {{ range where .Site.RegularPages "Section" "posts" }}
+  {{ if .Params.images }}
+  {{ $im := index .Params.images 0 }}
+  <div class="gpost" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}" data-url="{{ .RelPermalink }}">
+    <script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>
+    <button class="tile" data-i="0" aria-label="Open {{ .Title }}"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>
+    {{ if .Params.gallery }}<span class="badge">📷 Gallery·{{ len .Params.images }}</span>{{ end }}
+  </div>
+  {{ end }}
+  {{ end }}
+</div>
 {{ end }}

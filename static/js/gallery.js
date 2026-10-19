@@ -4,10 +4,10 @@
   lb.innerHTML = '<button class="lb-btn lb-close" aria-label="Close">✕</button>' +
     '<div class="lb-stage"><button class="lb-btn lb-prev" aria-label="Previous">←</button><img alt="">' +
     '<button class="lb-btn lb-next" aria-label="Next">→</button></div>' +
-    '<div class="lb-cap"><div class="cap-row"><span class="c1"></span><span class="c2"></span></div><div class="dots"></div></div>';
+    '<div class="lb-cap"><div class="cap-row"><span class="c1"></span><span class="c2"></span><a class="c3">View post</a></div><div class="dots"></div></div>';
   document.body.appendChild(lb);
   var q = function (s) { return lb.querySelector(s); };
-  var img = q('img'), stage = q('.lb-stage'), c1 = q('.c1'), c2 = q('.c2'), dots = q('.dots'), prev = q('.lb-prev'), next = q('.lb-next');
+  var img = q('img'), stage = q('.lb-stage'), c1 = q('.c1'), c2 = q('.c2'), c3 = q('.c3'), dots = q('.dots'), prev = q('.lb-prev'), next = q('.lb-next');
   var list = [], date = '', loc = '', i = 0, moved = false;
   var sc = 1, tx = 0, ty = 0;
   var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
@@ -82,10 +82,13 @@
   document.addEventListener('click', function (e) {
     var t = e.target.closest('.tile');
     if (!t) return;
-    var post = t.closest('.post');
+    var post = t.closest('.post, .gpost');
     list = JSON.parse(post.querySelector('.imgs').textContent);
     date = post.dataset.date || '';
     loc = post.dataset.loc || '';
+    var url = post.dataset.url || '';
+    c3.href = url;
+    c3.style.display = (url && url !== location.pathname) ? '' : 'none';
     lb.classList.add('open');
     document.body.style.overflow = 'hidden';
     show(+t.dataset.i);
@@ -154,4 +157,18 @@
       if (img.animate) img.animate([{ transform: from }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
     }
   });
+  // Card / grid view toggle (home page only); remembered between visits.
+  var tg = document.querySelector('.viewtoggle');
+  if (tg) {
+    var setView = function (v) {
+      document.documentElement.classList.toggle('view-grid', v === 'grid');
+      tg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === v ? 'true' : 'false'); });
+      try { localStorage.setItem('view', v); } catch (e) {}
+    };
+    setView(document.documentElement.classList.contains('view-grid') ? 'grid' : 'card');
+    tg.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (b) { setView(b.dataset.view); window.scrollTo(0, 0); }
+    });
+  }
 })();

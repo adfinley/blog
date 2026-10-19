@@ -10,7 +10,7 @@
   <div class="text">
     <h2>{{ .Title }}</h2>
     <div class="meta">
-      {{ $pg := . }}{{ range first 1 .Params.categories }}<span class="chip">{{ . }}</span>{{ end }}
+      {{ $pg := . }}{{ with .Params.categories }}{{ range first 1 . }}<span class="chip">{{ . }}</span>{{ end }}{{ end }}
       <span>{{ partial "metaline.html" $pg }}</span>
     </div>
     {{ .Content }}

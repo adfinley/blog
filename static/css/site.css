@@ -96,3 +96,24 @@ h1.tagline{margin:0 0 12px 8px}
 .lb-stage.scroll img{margin:0 auto}
 html a,html a *,html button,html button *,html .tile,html .tile *,html .dots i{cursor:pointer !important}
 html p,html h1,html h2,html li,html .meta span,html .chip,html .cap-row span,html .pager span{cursor:text !important}
+
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;max-width:1168px;margin:0 auto 24px}
+h1.tagline{margin:0}
+.viewtoggle{display:flex;flex:none;align-items:center;height:40px;padding:8px;border:1px solid #7A7575;border-radius:24px}
+.viewtoggle button{display:grid;place-items:center;width:48px;height:26px;padding:4px;border:0;border-radius:16px;background:none;color:#7A7575}
+.viewtoggle button[aria-pressed="true"]{background:#7A7575;color:#fff}
+.viewtoggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1}
+.gridview{display:none;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+html.view-grid .cardview{display:none}
+html.view-grid .gridview{display:grid}
+html.view-grid .wrap{max-width:none;padding:64px 16px}
+.gpost{position:relative;aspect-ratio:1/1;border-radius:4px;overflow:hidden;background:#e9e2e5}
+.gpost .tile{width:100%;height:100%;border-radius:4px}
+.gpost .badge{top:12px;left:12px;border-radius:999px}
+.cap-row a{color:var(--ink);text-decoration:underline}
+@media(max-width:700px){
+.head{padding-left:8px;margin-bottom:12px;gap:8px}
+html.view-grid .wrap{padding:12px 8px 20px}
+.gridview{grid-template-columns:1fr}
+.gpost .badge{top:10px;left:10px}
+}
