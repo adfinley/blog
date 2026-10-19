@@ -8,6 +8,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
 from PIL import Image, ImageOps
@@ -115,6 +116,23 @@ def save_image(url, block_id, slug, caption):
     return meta
 
 
+def save_video(url, block_id, slug):
+    """Download an uploaded video next to the post's images and return a shortcode that plays it."""
+    folder = Path(IMAGE_DIR) / slug
+    folder.mkdir(parents=True, exist_ok=True)
+    name = hashlib.sha1(block_id.encode()).hexdigest()[:10]
+    path = folder / (name + (Path(urlparse(url).path).suffix.lower() or '.mp4'))
+    if not path.exists():
+        with requests.get(url, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            if int(r.headers.get('Content-Length', 0)) > 90 * 1024 * 1024:
+                raise ValueError('video is over 90 MB (GitHub rejects files over 100 MB)')
+            with open(path, 'wb') as f:
+                for chunk in r.iter_content(1 << 20):
+                    f.write(chunk)
+    return '{{< video src="images/' + slug + '/' + path.name + '" >}}\n'
+
+
 def video_markdown(url):
     m = re.search(r'(?:youtu\.be/|v=|embed/|shorts/)([\w-]{11})', url)
     if 'youtu' in url and m:
@@ -164,11 +182,18 @@ def notion_to_markdown(blocks, slug, images, gallery=True):
                 inner = notion_to_markdown(get_page_content(col['id']), slug, images, gallery=False).strip()
                 cols.append(f'<div class="col">\n\n{inner}\n\n</div>')
             md.append('<div class="cols">\n' + '\n'.join(cols) + '\n</div>\n')
-        elif t in ('video', 'embed'):
+        elif t in ('video', 'embed', 'bookmark', 'link_preview'):
             d = block[t]
             url = d.get('url') or d.get('external', {}).get('url') or d.get('file', {}).get('url') or ''
-            if url:
+            if d.get('type') == 'file' and url:  # uploaded video: keep a copy, Notion links expire
+                try:
+                    md.append(save_video(url, block['id'], slug))
+                except Exception as e:
+                    print(f'⚠ Skipped a video in {slug}: {e}')
+            elif url:
                 md.append(video_markdown(url))
+        else:
+            print(f'⚠ Skipped an unsupported "{t}" block in {slug}')
     return '\n'.join(md)
 
 
