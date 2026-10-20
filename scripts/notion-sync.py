@@ -5,6 +5,7 @@ import io
 import json
 import os
 import re
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -37,11 +38,17 @@ def query_database():
         'filter': {'property': 'Status', 'status': {'equals': 'Published'}},
         'sorts': [{'property': 'Published Date', 'direction': 'descending'}],
     }
-    response = requests.post(url, headers=HEADERS, json=data)
-    if not response.ok:
-        print(f'Notion said: {response.text}')
-    response.raise_for_status()
-    return response.json()['results']
+    results = []
+    while True:  # Notion returns at most 100 rows per request
+        response = requests.post(url, headers=HEADERS, json=data)
+        if not response.ok:
+            print(f'Notion said: {response.text}')
+        response.raise_for_status()
+        body = response.json()
+        results += body['results']
+        if not body.get('has_more'):
+            return results
+        data['start_cursor'] = body['next_cursor']
 
 
 def get_page_content(page_id):
@@ -256,6 +263,19 @@ def create_hugo_post(props, content, images):
     print(f'✓ Created: {path.name} ({len(images)} images)')
 
 
+def remove_unpublished(keep):
+    """Delete posts (and their image folders) that are no longer Published in Notion."""
+    out, imgs = Path(OUTPUT_DIR), Path(IMAGE_DIR)
+    for f in sorted(out.glob('*.md')) if out.exists() else []:
+        if f.stem not in keep and not f.name.startswith('_'):
+            f.unlink()
+            print(f'🗑 Removed unpublished post: {f.name}')
+    for d in sorted(imgs.iterdir()) if imgs.exists() else []:
+        if d.is_dir() and d.name not in keep:
+            shutil.rmtree(d, ignore_errors=True)
+            print(f'🗑 Removed images: {d.name}')
+
+
 def sync():
     print('🔄 Syncing Notion to Hugo...')
     try:
@@ -264,19 +284,25 @@ def sync():
         print(f'❌ Error querying database: {e}')
         sys.exit(1)
     print(f'Found {len(pages)} published posts')
-    errors = 0
+    errors, keep = 0, set()
     for page in pages:
         try:
             props = extract_properties(page)
+            keep.add(props['slug'])
             images = []
             content = notion_to_markdown(get_page_content(page['id']), props['slug'], images)
             create_hugo_post(props, content, images)
         except Exception as e:
             print(f'✗ Error processing page: {e}')
             errors += 1
-    print(f'✅ Done. Errors: {errors}')
     if errors:
+        print(f'✅ Done with {errors} error(s). Skipped removing unpublished posts.')
         sys.exit(1)
+    if not pages:
+        print('⚠ No published posts found, so nothing was removed.')
+    else:
+        remove_unpublished(keep)
+    print('✅ Done.')
 
 
 if __name__ == '__main__':
