@@ -263,6 +263,19 @@ def create_hugo_post(props, content, images):
     print(f'✓ Created: {path.name} ({len(images)} images)')
 
 
+def can_trust_empty_result():
+    """True when Notion clearly shows posts exist but none are Published (so an empty result is genuine)."""
+    try:
+        db = requests.get(f'{NOTION_API}/databases/{DATABASE_ID}', headers=HEADERS)
+        db.raise_for_status()
+        options = db.json()['properties'].get('Status', {}).get('status', {}).get('options', [])
+        rows = requests.post(f'{NOTION_API}/databases/{DATABASE_ID}/query', headers=HEADERS, json={'page_size': 1})
+        rows.raise_for_status()
+        return any(o['name'] == 'Published' for o in options) and bool(rows.json()['results'])
+    except Exception:
+        return False
+
+
 def remove_unpublished(keep):
     """Delete posts (and their image folders) that are no longer Published in Notion."""
     out, imgs = Path(OUTPUT_DIR), Path(IMAGE_DIR)
@@ -284,8 +297,9 @@ def sync():
         print(f'❌ Error querying database: {e}')
         sys.exit(1)
     print(f'Found {len(pages)} published posts')
-    errors, keep = 0, set()
+    errors, keep, unsure = 0, set(), False
     for page in pages:
+        props = None
         try:
             props = extract_properties(page)
             keep.add(props['slug'])
@@ -293,16 +307,22 @@ def sync():
             content = notion_to_markdown(get_page_content(page['id']), props['slug'], images)
             create_hugo_post(props, content, images)
         except Exception as e:
-            print(f'✗ Error processing page: {e}')
+            # One bad post must not block the others, so warn and carry on (the run stays green and still commits).
+            print(f'::warning::Could not process "{(props or {}).get("title", "a page")}": {e}')
             errors += 1
-    if errors:
-        print(f'✅ Done with {errors} error(s). Skipped removing unpublished posts.')
-        sys.exit(1)
-    if not pages:
-        print('⚠ No published posts found, so nothing was removed.')
+            if props is None:
+                unsure = True  # slug unknown, so we can't tell which files are safe to remove
+    if unsure:
+        print('⚠ Skipped removing unpublished posts because a page could not be read.')
+    elif not pages:
+        if can_trust_empty_result():
+            print('No posts are Published in Notion, so removing every post.')
+            remove_unpublished(set())
+        else:
+            print('⚠ No published posts found and Notion could not confirm why, so nothing was removed.')
     else:
         remove_unpublished(keep)
-    print('✅ Done.')
+    print(f'✅ Done. Posts with errors: {errors}')
 
 
 if __name__ == '__main__':
