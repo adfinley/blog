@@ -170,6 +170,8 @@ def notion_to_markdown(blocks, slug, images, gallery=True, excerpt=None):
                 print(f'⚠ Skipped an image in {slug}: {e}')
                 continue
             if leading:
+                if not images:  # first image: its caption becomes the line under the title
+                    im['first_caption'] = ''.join(x['plain_text'] for x in block['image'].get('caption', []))
                 images.append(im)
             else:
                 md.append(f'![{caption or "Image"}]({im["src"]})\n')
@@ -224,6 +226,7 @@ def extract_properties(page):
     return {
         'title': title, 'date': date, 'slug': slug,
         'excerpt': '',  # filled in from the first paragraph of the page body
+        'caption': '',  # filled in from the first image's caption in Notion
         'location': plain(p.get('Location'), 'rich_text'),
         'tags': tags, 'categories': [cat['name'] if cat else 'Uncategorized'],
         'feature_type': ftype['name'] if ftype else 'Landscape',
@@ -309,6 +312,7 @@ def sync():
             images, excerpt = [], []
             content = notion_to_markdown(get_page_content(page['id']), props['slug'], images, excerpt=excerpt)
             props['excerpt'] = excerpt[0] if excerpt else ''
+            props['caption'] = images[0].pop('first_caption', '') if images else ''
             create_hugo_post(props, content, images)
         except Exception as e:
             # One bad post must not block the others, so warn and carry on (the run stays green and still commits).
