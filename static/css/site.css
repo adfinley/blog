@@ -120,7 +120,7 @@ html.view-grid .wrap{padding:12px 8px 20px}
 
 
 /* content spacing: bottom margins only (matches Notion) */
-article.post .text > :is(h2,h3,h4,h5,p,ul,ol,blockquote,pre,hr),
+article.post .text > :is(h2,h3,h4,h5,p,ul,ol,blockquote,pre),
 article.post .col > :is(h2,h3,h4,h5,p,ul,ol,blockquote,pre,hr) {
   margin-top: 0 !important;
   padding-top: 0 !important;
