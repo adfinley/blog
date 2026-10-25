@@ -1,7 +1,7 @@
 ---
 title: "In the garage"
 date: "2026-10-24"
-description: "In the Walmart underground parking garage.. so much sound proofing"
+excerpt: "There was this weird half grey, half beige colouring of the roof with these lights shining on the soundproofing."
 location: ""
 tags: []
 categories: ["POTD"]

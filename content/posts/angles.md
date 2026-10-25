@@ -1,7 +1,7 @@
 ---
 title: "Angles"
 date: "2026-10-23"
-description: ""
+excerpt: ""
 location: ""
 tags: []
 categories: ["POTD"]
