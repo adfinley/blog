@@ -117,3 +117,29 @@ html.view-grid .wrap{padding:12px 8px 20px}
 .gridview{grid-template-columns:1fr}
 .gpost .badge{top:10px;left:10px}
 }
+
+
+/* content spacing: bottom margins only (matches Notion) */
+article.post .text > :is(h2,h3,h4,h5,p,ul,ol,blockquote,pre,hr),
+article.post .col > :is(h2,h3,h4,h5,p,ul,ol,blockquote,pre,hr) {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  margin-bottom: 1.4em !important;
+}
+article.post .text > :is(h2,h3,h4,h5),
+article.post .col > :is(h2,h3,h4,h5) {
+  margin-bottom: .45em !important;
+}
+
+/* divider: 1px #E6E5E3 */
+article.post .text hr,
+article.post .col hr {
+  display: block;
+  width: 100%;
+  height: 0;
+  background: none;
+  opacity: 1;
+  border-style: solid !important;
+  border-width: 1px 0 0 0 !important;
+  border-color: #E6E5E3 !important;
+}

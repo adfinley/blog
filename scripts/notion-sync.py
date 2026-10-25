@@ -183,6 +183,7 @@ def notion_to_markdown(blocks, slug, images, gallery=True, excerpt=None):
         elif t == 'heading_1': md.append(f'## {rt()}\n')
         elif t == 'heading_2': md.append(f'### {rt()}\n')
         elif t == 'heading_3': md.append(f'#### {rt()}\n')
+        elif t == 'heading_4': md.append(f'##### {rt()}\n')
         elif t == 'bulleted_list_item': md.append(f'- {rt()}\n')
         elif t == 'numbered_list_item': md.append(f'1. {rt()}\n')
         elif t == 'code': md.append(f'```{block[t]["language"]}\n{rt()}\n```\n')
