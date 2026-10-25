@@ -1,7 +1,7 @@
 ---
 title: "Fall leaves"
 date: "2026-10-22"
-description: ""
+excerpt: ""
 location: ""
 tags: []
 categories: ["POTD"]
