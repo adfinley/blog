@@ -132,7 +132,6 @@ article.post .col > :is(h2,h3,h4,h5) {
 }
 
 /* divider: 1px #E6E5E3 */
-article.post .text hr,
 article.post .col hr {
   display: block;
   width: 100%;
