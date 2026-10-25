@@ -17,7 +17,7 @@
     <div class="text">
       <div>
         <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
-        {{ with .Description }}<p>{{ . }}</p>{{ end }}
+        {{ with .Params.excerpt }}<p>{{ . }}</p>{{ end }}
       </div>
       <div class="meta">
         {{ with $pg.Params.categories }}{{ range first 1 . }}<span class="chip">{{ . }}</span>{{ end }}{{ end }}

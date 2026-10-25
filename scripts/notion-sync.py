@@ -150,8 +150,9 @@ def video_markdown(url):
     return f'[{url}]({url})\n'
 
 
-def notion_to_markdown(blocks, slug, images, gallery=True):
-    """Images at the top of the page become the featured gallery; later images stay inline, in order."""
+def notion_to_markdown(blocks, slug, images, gallery=True, excerpt=None):
+    """Images at the top of the page become the featured gallery; later images stay inline, in order.
+    If an excerpt list is passed, the first top-level paragraph below the images is stored in it as plain text."""
     md, leading = [], gallery
     for block in blocks:
         t = block['type']
@@ -174,6 +175,8 @@ def notion_to_markdown(blocks, slug, images, gallery=True):
                 md.append(f'![{caption or "Image"}]({im["src"]})\n')
             continue
         leading = False
+        if t == 'paragraph' and excerpt is not None and not excerpt:
+            excerpt.append(''.join(x['plain_text'] for x in block[t]['rich_text']).strip())
         if t == 'paragraph': md.append(f'{rt()}\n')
         elif t == 'heading_1': md.append(f'## {rt()}\n')
         elif t == 'heading_2': md.append(f'### {rt()}\n')
@@ -220,7 +223,7 @@ def extract_properties(page):
     ftype = (p.get('Feature type') or {}).get('select')
     return {
         'title': title, 'date': date, 'slug': slug,
-        'description': plain(p.get('Description'), 'rich_text'),
+        'excerpt': '',  # filled in from the first paragraph of the page body
         'location': plain(p.get('Location'), 'rich_text'),
         'tags': tags, 'categories': [cat['name'] if cat else 'Uncategorized'],
         'feature_type': ftype['name'] if ftype else 'Landscape',
@@ -303,8 +306,9 @@ def sync():
         try:
             props = extract_properties(page)
             keep.add(props['slug'])
-            images = []
-            content = notion_to_markdown(get_page_content(page['id']), props['slug'], images)
+            images, excerpt = [], []
+            content = notion_to_markdown(get_page_content(page['id']), props['slug'], images, excerpt=excerpt)
+            props['excerpt'] = excerpt[0] if excerpt else ''
             create_hugo_post(props, content, images)
         except Exception as e:
             # One bad post must not block the others, so warn and carry on (the run stays green and still commits).
