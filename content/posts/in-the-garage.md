@@ -1,7 +1,7 @@
 ---
 title: "In the garage"
 date: "2026-10-24"
-excerpt: "This is second text that is not the description"
+excerpt: "aksdjfklasjdflkasdfj"
 caption: "There was this weird half grey, half beige colouring of the roof with these lights shining on the soundproofing."
 location: ""
 tags: []
@@ -13,4 +13,21 @@ images: [{"w": 2400, "h": 1350, "exif": "Apple iPhone 17 · iPhone 17 front came
 feature: [0]
 grid: "single"
 ---
-This is second text that is not the description
+## This is second text that is not the description
+
+aksdjfklasjdflkasdfj
+
+### asdfasdf
+
+<div class="cols">
+<div class="col">
+
+aksdjfklasj dflkasdfjaksdjfklasjdflkasd  fjaksdjfklasjdflkasdfjaksdjfklasj dflkasdfjaksdjfklasjdflkasdfj aksdjfklasjdf lkasdfjaksdjfklasjdflkasdfja ksdjfklasjdflkasdfj aksdjfkla sjdflkasdfjaksdjfklasjdflkasdfj
+
+</div>
+<div class="col">
+
+
+
+</div>
+</div>
