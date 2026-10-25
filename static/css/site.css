@@ -80,7 +80,7 @@ p,h1.tagline,.text h2,.meta span,.chip,.cap-row span,.pager span{cursor:text}
 .lb-stage{touch-action:none}
 .lb.zoom .lb-btn,.lb.zoom .lb-cap{display:none}
 .lb-stage.scroll{overflow:auto;align-items:flex-start}
-.cols{display:flex;gap:24px;align-items:flex-start;margin:16px 0}
+.cols{display:flex;gap:24px;align-items:flex-start}
 .col{flex:1;min-width:0}
 .col>:first-child{margin-top:0}.col>:last-child{margin-bottom:0}
 @media(max-width:700px){
