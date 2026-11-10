@@ -50,9 +50,9 @@
   {{ range where .Site.RegularPages "Section" "posts" }}
   {{ if .Params.images }}
   {{ $im := index .Params.images 0 }}
-  <div class="gpost" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}" data-url="{{ .RelPermalink }}">
+  <div class="gpost" style="aspect-ratio: {{ printf "%v / %v" ($im.w | default 1) ($im.h | default 1) | safeCSS }}" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}" data-url="{{ .RelPermalink }}">
     <script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>
-    <button class="tile" data-i="0" aria-label="Open {{ .Title }}"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>
+    <button class="tile" data-i="0" aria-label="Open {{ .Title }}"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" width="{{ $im.w }}" height="{{ $im.h }}" loading="lazy"></button>
     {{ if .Params.gallery }}<span class="badge">📷 Gallery·{{ len .Params.images }}</span>{{ end }}
   </div>
   {{ end }}
