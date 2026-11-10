@@ -144,9 +144,15 @@ article.post .col hr {
   border-color: #E6E5E3 !important;
 }
 
-/* masonry grid view */
-html.view-grid .gridview{display:block;columns:300px;column-gap:8px}
-.gpost{margin:0 0 8px;break-inside:avoid;-webkit-column-break-inside:avoid}
+/* mosaic view */
+html.view-mosaic .cardview{display:none}
+html.view-mosaic .wrap{max-width:none;padding:64px 16px;container-type:inline-size}
+html.view-mosaic .gridview{display:grid;--cols:6;--gap:8px;grid-template-columns:repeat(var(--cols),minmax(0,1fr));grid-auto-rows:calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols));grid-auto-flow:dense;gap:var(--gap)}
+html.view-mosaic .gpost{aspect-ratio:auto;min-width:0}
+html.view-mosaic .gpost.wide{grid-column:span 3;grid-row:span 2}
+@media(max-width:900px){html.view-mosaic .gridview{--cols:4}}
 @media(max-width:700px){
-html.view-grid .gridview{columns:1}
+html.view-mosaic .wrap{padding:12px 8px 20px}
+html.view-mosaic .gridview{--cols:2}
+html.view-mosaic .gpost.wide{grid-column:span 2;grid-row:span 1}
 }
