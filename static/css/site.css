@@ -143,3 +143,10 @@ article.post .col hr {
   border-width: 1px 0 0 0 !important;
   border-color: #E6E5E3 !important;
 }
+
+/* masonry grid view */
+html.view-grid .gridview{display:block;columns:300px;column-gap:8px}
+.gpost{margin:0 0 8px;break-inside:avoid;-webkit-column-break-inside:avoid}
+@media(max-width:700px){
+html.view-grid .gridview{columns:1}
+}
