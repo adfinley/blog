@@ -4,6 +4,7 @@
   <div class="viewtoggle" role="group" aria-label="Choose view">
     <button type="button" data-view="card" aria-pressed="true" aria-label="Card view" title="Card view"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="3.5"/><path d="M1.5 12.5h15"/></svg></button>
     <button type="button" data-view="grid" aria-pressed="false" aria-label="Grid view" title="Grid view"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="3.5"/><path d="M1.5 6.5h15M1.5 11.5h15M6.5 1.5v15M11.5 1.5v15"/></svg></button>
+    <button type="button" data-view="mosaic" aria-pressed="false" aria-label="Mosaic view" title="Mosaic view"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="1.5" width="15" height="15" rx="3.5"/><path d="M1.5 8h15M10 1.5v6.5M6 8v8.5M12 8v8.5"/></svg></button>
   </div>
 </div>
 
@@ -47,12 +48,15 @@
 </div>
 
 <div class="gridview">
+  {{ $since := 2 }}
   {{ range where .Site.RegularPages "Section" "posts" }}
   {{ if .Params.images }}
   {{ $im := index .Params.images 0 }}
-  <div class="gpost" style="aspect-ratio: {{ printf "%v / %v" ($im.w | default 1) ($im.h | default 1) | safeCSS }}" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}" data-url="{{ .RelPermalink }}">
+  {{ $wide := false }}
+  {{ if and (ge $since 4) (ge (div (float ($im.w | default 1)) (float ($im.h | default 1))) 1.4) }}{{ $wide = true }}{{ $since = 0 }}{{ else }}{{ $since = add $since 1 }}{{ end }}
+  <div class="gpost{{ if $wide }} wide{{ end }}" data-date="{{ .Date.Format "January 2, 2006" }}" data-loc="{{ .Params.location }}" data-url="{{ .RelPermalink }}">
     <script type="application/json" class="imgs">{{ partial "lbdata.html" . | safeJS }}</script>
-    <button class="tile" data-i="0" aria-label="Open {{ .Title }}"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" width="{{ $im.w }}" height="{{ $im.h }}" loading="lazy"></button>
+    <button class="tile" data-i="0" aria-label="Open {{ .Title }}"><img src="{{ $im.src | strings.TrimPrefix "/" | relURL }}" alt="{{ $im.alt }}" loading="lazy"></button>
     {{ if .Params.gallery }}<span class="badge">📷 Gallery·{{ len .Params.images }}</span>{{ end }}
   </div>
   {{ end }}
