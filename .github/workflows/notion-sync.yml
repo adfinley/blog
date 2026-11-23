@@ -1,12 +1,9 @@
 name: Sync Notion to Hugo
 
 on:
-  # Run every hour
-  schedule:
-    - cron: '0 * * * *'
-  # Allow manual trigger
+  # Manual trigger (used by the iOS Shortcut)
   workflow_dispatch:
-  # Run when this workflow changes
+  # Run when this workflow or the script changes
   push:
     paths:
       - '.github/workflows/notion-sync.yml'
